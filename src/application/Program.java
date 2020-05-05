@@ -1,55 +1,50 @@
 package application;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Scanner;
 
-import entities.Product;
+import model.entities.CarRental;
+import model.entities.Vehicle;
+import model.services.BrazilTaxService;
+import model.services.RentalService;
 
 public class Program {
 
-	public static void main(String[] args) {
-		
+	public static void main(String[] args)  throws ParseException {
 		Locale.setDefault(Locale.US);
 		Scanner sc = new Scanner(System.in);
-		List<Product> list = new ArrayList<>();
+		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:ss");
+		
+		System.out.println("Enter rental data");
+		System.out.print("Car model: ");
+		String carModel = sc.nextLine();
+		System.out.print("Pickup (dd/MM/yyyy hh:ss): ");
+		Date start = sdf.parse(sc.nextLine());
+		System.out.print("Return (dd/MM/yyyy hh:ss): ");
+		Date finish = sdf.parse(sc.nextLine());
+		
+		CarRental carRental = new CarRental(start, finish, new Vehicle(carModel));
+		
+		System.out.print("Enter price per hour: ");
+		double pricePerHour = sc.nextDouble();
+		System.out.print("Enter price per day: ");
+		double pricePerDay = sc.nextDouble();
+		
+		RentalService rentalService = new RentalService(pricePerDay, pricePerHour, new BrazilTaxService());
+		
+		rentalService.processInvoice(carRental);
+		
+		System.out.println("INVOICE:");
+		System.out.println("Basic payment: " + String.format("%.2f", carRental.getInvoice().getBasicPayment()));
+		System.out.println("Tax: " + String.format("%.2f", carRental.getInvoice().getTax()));
+		System.out.println("Total payment: " + String.format("%.2f", carRental.getInvoice().getTotalPayment()));
 
-		System.out.print("Enter the file directory: ");
-		String path = sc.nextLine();
 
-		try (BufferedReader br = new BufferedReader(new FileReader(path))) {
-			String line = br.readLine();
-			while (line != null) {
-				String[] product = line.split(",");
-				list.add(new Product(product[0], Double.parseDouble(product[1]), Integer.parseInt(product[2])));
-				line = br.readLine();
-			}
-			String target = path.replace("\\Products.csv", "\\out");
-			boolean file = new File(target).mkdir();
-
-			try (BufferedWriter bw = new BufferedWriter(new FileWriter(target + "\\Result.csv"))) {
-
-				for (Product product : list) {
-					bw.write(product.toString());
-					bw.newLine();
-				}
-				if (file) {
-					System.out.println("Sucessfully created file!");
-				}else {
-					System.out.println("Error creating file!");
-				}
-			}
-
-		} catch (Exception e) {
-			System.out.println("Error: " + e.getMessage());
-		}
+		
+		
 		sc.close();
 	}
 }
